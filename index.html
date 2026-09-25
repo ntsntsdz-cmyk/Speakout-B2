@@ -5,41 +5,131 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Speakout B2 - Course Navigator</title>
     <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; max-width: 900px; margin: 40px auto; padding: 20px; background: #f6f8fa; color: #24292f; }
-        h1 { text-align: center; color: #1f2328; margin-bottom: 30px; }
-        .unit-container { background: white; border: 1px solid #d0d7de; border-radius: 6px; margin-bottom: 20px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
-        .unit-title { font-size: 20px; font-weight: 600; margin-top: 0; margin-bottom: 15px; color: #0969da; border-bottom: 1px solid #d0d7de; padding-bottom: 8px; }
-        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 12px; }
-        .btn { display: block; text-align: center; padding: 12px 8px; background: #f6f8fa; color: #24292f; text-decoration: none; border: 1px solid #d0d7de; border-radius: 6px; font-weight: 500; font-size: 14px; transition: all 0.2s ease; }
-        .btn:hover { background: #238636; color: white; border-color: #238636; transform: translateY(-2px); }
-        
-        /* Submit section styling */
-        .submit-section { background: white; border: 1px solid #d0d7de; border-radius: 6px; padding: 20px; margin-top: 30px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
-        .submit-section input[type="text"] { padding: 8px 12px; border: 1px solid #d0d7de; border-radius: 6px; font-size: 14px; margin-right: 10px; width: 250px; }
-        .submit-btn { padding: 8px 16px; background: #238636; color: white; border: none; border-radius: 6px; font-weight: 600; font-size: 14px; cursor: pointer; transition: background 0.2s ease; }
-        .submit-btn:hover { background: #2ea043; }
-        #submissionStatus { margin-top: 10px; font-weight: 500; font-size: 14px; }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; 
+            max-width: 900px; 
+            margin: 40px auto; 
+            padding: 20px; 
+            background: #f6f8fa; 
+            color: #24292f; 
+        }
+        h1 { 
+            text-align: center; 
+            color: #1f2328; 
+            margin-bottom: 30px; 
+        }
+        .unit-container { 
+            background: white; 
+            border: 1px solid #d0d7de; 
+            border-radius: 6px; 
+            margin-bottom: 20px; 
+            padding: 20px; 
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05); 
+        }
+        .unit-title { 
+            font-size: 20px; 
+            font-weight: 600; 
+            margin-top: 0; 
+            margin-bottom: 15px; 
+            color: #0969da; 
+            border-bottom: 1px solid #d0d7de; 
+            padding-bottom: 8px; 
+        }
+        .grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); 
+            gap: 12px; 
+        }
+        .btn { 
+            display: block; 
+            text-align: center; 
+            padding: 12px 8px; 
+            background: #f6f8fa; 
+            color: #24292f; 
+            text-decoration: none; 
+            border: 1px solid #d0d7de; 
+            border-radius: 6px; 
+            font-weight: 500; 
+            font-size: 14px; 
+            transition: all 0.2s ease; 
+        }
+        .btn:hover { 
+            background: #238636; 
+            color: white; 
+            border-color: #238636; 
+            transform: translateY(-2px); 
+        }
+
+        /* Submissions and Report Modal Styling */
+        .submit-bar { 
+            background: #ffffff; 
+            border: 1px solid #d0d7de; 
+            border-radius: 6px; 
+            padding: 20px; 
+            margin-top: 30px; 
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05); 
+        }
+        .submit-bar h3 { 
+            margin-top: 0; 
+            color: #1f2328; 
+        }
+        .submit-bar input[type="text"] { 
+            padding: 8px 12px; 
+            border: 1px solid #d0d7de; 
+            border-radius: 6px; 
+            font-size: 14px; 
+            width: 250px; 
+            margin-right: 10px; 
+        }
+        .btn-submit { 
+            padding: 8px 16px; 
+            background: #238636; 
+            color: white; 
+            border: none; 
+            border-radius: 6px; 
+            font-weight: 600; 
+            font-size: 14px; 
+            cursor: pointer; 
+            transition: background 0.2s ease; 
+        }
+        .btn-submit:hover { 
+            background: #2ea043; 
+        }
+        .btn-submit:disabled { 
+            background: #94d3a2; 
+            cursor: not-allowed; 
+        }
+        #statusMessage { 
+            margin-top: 10px; 
+            font-weight: 600; 
+            font-size: 14px; 
+        }
     </style>
 </head>
 <body>
 
     <h1>📚 Speakout B2 Course Navigator</h1>
+    
+    <!-- DASHBOARD CONTAINER -->
     <div id="dashboard"></div>
 
-    <!-- STUDENT SUBMIT BAR -->
-    <div class="submit-section">
-        <h3>Submit Progress to Teacher</h3>
-        <label for="studentName"><strong>Student Name:</strong> </label>
-        <input type="text" id="studentName" placeholder="Enter your full name..." required>
-        <button class="submit-btn" onclick="submitWork()">Send Report</button>
-        <p id="submissionStatus"></p>
+    <!-- STUDENT REPORT & SUBMISSION SECTION -->
+    <div class="submit-bar">
+        <h3>🚀 Submit Results to Teacher</h3>
+        <p>Type your name below and click submit to record your progress and mistake report directly to your teacher's gradebook.</p>
+        <div style="margin-top: 15px;">
+            <label for="studentName"><strong>Student Name: </strong></label>
+            <input type="text" id="studentName" placeholder="Enter your full name..." required>
+            <button id="sendBtn" class="btn-submit" onclick="submitResultsToTeacher()">Send Report</button>
+        </div>
+        <p id="statusMessage"></p>
     </div>
 
     <script>
-        // 1. Paste your Web App Deployment URL from Google Apps Script here
-        const GOOGLE_SCRIPT_URL = "YOUR_GOOGLE_APPS_SCRIPT_WEB_APP_URL_HERE";
+        // GOOGLE APPS SCRIPT ENDPOINT URL
+        const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyOLbbrIaq7jq7Y9sBQYBbeLUTjZYwdb00ICZFYuryqlIwdijKO96bzpCqVWwNJdV9SKw/exec";
 
-        // 2. Build Dashboard Navigator
+        // 1. GENERATE COURSE NAVIGATION GRID
         const dashboard = document.getElementById('dashboard');
         
         for (let unit = 1; unit <= 8; unit++) {
@@ -74,49 +164,76 @@
             dashboard.appendChild(unitDiv);
         }
 
-        // 3. Dynamic Mistake Collector and Google Sheets Reporter
-        async function submitWork() {
-            const nameInput = document.getElementById("studentName").value.trim();
-            const statusMsg = document.getElementById("submissionStatus");
+        // 2. SAVE & RESTORE LOCAL PROGRESS
+        document.addEventListener('DOMContentLoaded', () => {
+            const savedName = localStorage.getItem('student_name');
+            if (savedName) {
+                document.getElementById('studentName').value = savedName;
+            }
 
-            if (!nameInput) {
-                alert("Please enter your name before submitting!");
+            document.querySelectorAll('input, select, textarea').forEach(input => {
+                const savedVal = localStorage.getItem('field_' + input.id);
+                if (savedVal && input.id !== 'studentName') {
+                    input.value = savedVal;
+                }
+
+                input.addEventListener('input', () => {
+                    if (input.id === 'studentName') {
+                        localStorage.setItem('student_name', input.value);
+                    } else if (input.id) {
+                        localStorage.setItem('field_' + input.id, input.value);
+                    }
+                });
+            });
+        });
+
+        // 3. COLLECT EXERCISES AND TRANSMIT MISTAKE REPORT
+        async function submitResultsToTeacher() {
+            const studentNameInput = document.getElementById('studentName');
+            const studentName = studentNameInput.value.trim();
+            const statusMsg = document.getElementById('statusMessage');
+            const sendBtn = document.getElementById('sendBtn');
+
+            if (!studentName) {
+                alert("Please enter your name before submitting your results!");
+                studentNameInput.focus();
                 return;
             }
 
-            statusMsg.textContent = "Submitting your work...";
+            sendBtn.disabled = true;
+            statusMsg.textContent = "Transmitting results to teacher...";
             statusMsg.style.color = "#0969da";
 
-            // Collect exercise inputs dynamically on the current page
-            const inputs = Array.from(document.querySelectorAll('input[data-correct], select[data-correct], textarea[data-correct]'));
+            // Scan exercise inputs on the current document
+            const exercises = Array.from(document.querySelectorAll('input[data-correct], select[data-correct], textarea[data-correct]'));
             
-            let score = 0;
-            const maxScore = inputs.length;
+            let totalScore = 0;
+            const maxScore = exercises.length;
             const mistakesList = [];
 
-            inputs.forEach(el => {
-                const studentVal = el.value.trim();
+            exercises.forEach(el => {
+                const userVal = el.value.trim();
                 const correctVal = el.getAttribute('data-correct').trim();
-                const exerciseCategory = el.getAttribute('data-exercise') || el.name || el.id || "General Exercise";
+                const exerciseGroup = el.getAttribute('data-exercise') || el.name || el.id || "General Question";
 
-                if (studentVal.toLowerCase() === correctVal.toLowerCase()) {
-                    score++;
+                if (userVal.toLowerCase() === correctVal.toLowerCase()) {
+                    totalScore++;
                 } else {
                     mistakesList.push({
-                        exercise: exerciseCategory,
-                        studentInput: studentVal || "(Blank)",
+                        exercise: exerciseGroup,
+                        studentInput: userVal || "(Blank)",
                         correctAnswer: correctVal
                     });
                 }
             });
 
-            // Construct payload matching your Google Sheet script
+            // Construct payload matching the Apps Script model
             const payload = {
-                studentName: nameInput,
+                studentName: studentName,
                 course: "Speakout-B2",
-                unit: 1, // Update per lesson page
-                lesson: 4, // Update per lesson page
-                score: score,
+                unit: 1,
+                lesson: "Navigator Overview",
+                score: totalScore,
                 maxScore: maxScore,
                 mistakes: mistakesList
             };
@@ -129,14 +246,14 @@
                     body: JSON.stringify(payload)
                 });
 
-                statusMsg.textContent = `Report submitted successfully! Total score recorded.`;
+                statusMsg.textContent = "✅ Report submitted successfully! Your teacher can now review your work.";
                 statusMsg.style.color = "#1a7f37";
             } catch (err) {
-                statusMsg.textContent = "Submission failed. Please check your network connection.";
+                statusMsg.textContent = "❌ Submission failed. Please check your network connection and try again.";
                 statusMsg.style.color = "#cf222e";
+                sendBtn.disabled = false;
             }
         }
     </script>
-
 </body>
 </html>
