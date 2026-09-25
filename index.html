@@ -1,259 +1,53 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Speakout B2 - Course Navigator</title>
-    <style>
-        body { 
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; 
-            max-width: 900px; 
-            margin: 40px auto; 
-            padding: 20px; 
-            background: #f6f8fa; 
-            color: #24292f; 
-        }
-        h1 { 
-            text-align: center; 
-            color: #1f2328; 
-            margin-bottom: 30px; 
-        }
-        .unit-container { 
-            background: white; 
-            border: 1px solid #d0d7de; 
-            border-radius: 6px; 
-            margin-bottom: 20px; 
-            padding: 20px; 
-            box-shadow: 0 1px 3px rgba(0,0,0,0.05); 
-        }
-        .unit-title { 
-            font-size: 20px; 
-            font-weight: 600; 
-            margin-top: 0; 
-            margin-bottom: 15px; 
-            color: #0969da; 
-            border-bottom: 1px solid #d0d7de; 
-            padding-bottom: 8px; 
-        }
-        .grid { 
-            display: grid; 
-            grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); 
-            gap: 12px; 
-        }
-        .btn { 
-            display: block; 
-            text-align: center; 
-            padding: 12px 8px; 
-            background: #f6f8fa; 
-            color: #24292f; 
-            text-decoration: none; 
-            border: 1px solid #d0d7de; 
-            border-radius: 6px; 
-            font-weight: 500; 
-            font-size: 14px; 
-            transition: all 0.2s ease; 
-        }
-        .btn:hover { 
-            background: #238636; 
-            color: white; 
-            border-color: #238636; 
-            transform: translateY(-2px); 
-        }
+<!-- REPLACE YOUR EXISTING MODAL BUTTONS WITH THIS -->
+<div class="modal-buttons" style="display: flex; gap: 10px; margin-top: 15px;">
+    <button id="sendSheetBtn" onclick="sendModalReportToSheet()" style="background: #238636; color: white; padding: 10px 16px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer;">
+        🚀 Send to Teacher
+    </button>
+    <button onclick="copyReport()" style="padding: 10px 16px;">📋 Copy</button>
+    <button onclick="downloadReport()" style="padding: 10px 16px;">⬇️ Download</button>
+    <button onclick="closeModal()" style="padding: 10px 16px;">Close</button>
+</div>
 
-        /* Submissions and Report Modal Styling */
-        .submit-bar { 
-            background: #ffffff; 
-            border: 1px solid #d0d7de; 
-            border-radius: 6px; 
-            padding: 20px; 
-            margin-top: 30px; 
-            box-shadow: 0 1px 3px rgba(0,0,0,0.05); 
-        }
-        .submit-bar h3 { 
-            margin-top: 0; 
-            color: #1f2328; 
-        }
-        .submit-bar input[type="text"] { 
-            padding: 8px 12px; 
-            border: 1px solid #d0d7de; 
-            border-radius: 6px; 
-            font-size: 14px; 
-            width: 250px; 
-            margin-right: 10px; 
-        }
-        .btn-submit { 
-            padding: 8px 16px; 
-            background: #238636; 
-            color: white; 
-            border: none; 
-            border-radius: 6px; 
-            font-weight: 600; 
-            font-size: 14px; 
-            cursor: pointer; 
-            transition: background 0.2s ease; 
-        }
-        .btn-submit:hover { 
-            background: #2ea043; 
-        }
-        .btn-submit:disabled { 
-            background: #94d3a2; 
-            cursor: not-allowed; 
-        }
-        #statusMessage { 
-            margin-top: 10px; 
-            font-weight: 600; 
-            font-size: 14px; 
-        }
-    </style>
-</head>
-<body>
+<p id="sendModalStatus" style="margin-top: 10px; font-weight: bold;"></p>
 
-    <h1>📚 Speakout B2 Course Navigator</h1>
+<script>
+async function sendModalReportToSheet() {
+    const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyOLbbrIaq7jq7Y9sBQYBbeLUTjZYwdb00ICZFYuryqlIwdijKO96bzpCqVWwNJdV9SKw/exec";
     
-    <!-- DASHBOARD CONTAINER -->
-    <div id="dashboard"></div>
+    const btn = document.getElementById("sendSheetBtn");
+    const status = document.getElementById("sendModalStatus");
+    
+    // Grab text report content from the textarea/modal box
+    const reportText = document.querySelector('.modal-body, textarea, pre')?.innerText || document.querySelector('.modal-body, textarea, pre')?.value || "";
+    
+    // Extract student name from sidebar or report text
+    const studentMatch = reportText.match(/Student:\s*(.+)/i);
+    const studentName = studentMatch ? studentMatch[1].trim() : "Nino";
 
-    <!-- STUDENT REPORT & SUBMISSION SECTION -->
-    <div class="submit-bar">
-        <h3>🚀 Submit Results to Teacher</h3>
-        <p>Type your name below and click submit to record your progress and mistake report directly to your teacher's gradebook.</p>
-        <div style="margin-top: 15px;">
-            <label for="studentName"><strong>Student Name: </strong></label>
-            <input type="text" id="studentName" placeholder="Enter your full name..." required>
-            <button id="sendBtn" class="btn-submit" onclick="submitResultsToTeacher()">Send Report</button>
-        </div>
-        <p id="statusMessage"></p>
-    </div>
+    btn.disabled = true;
+    status.textContent = "Sending to teacher's Google Sheet...";
+    status.style.color = "#0969da";
 
-    <script>
-        // GOOGLE APPS SCRIPT ENDPOINT URL
-        const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyOLbbrIaq7jq7Y9sBQYBbeLUTjZYwdb00ICZFYuryqlIwdijKO96bzpCqVWwNJdV9SKw/exec";
-
-        // 1. GENERATE COURSE NAVIGATION GRID
-        const dashboard = document.getElementById('dashboard');
-        
-        for (let unit = 1; unit <= 8; unit++) {
-            const unitDiv = document.createElement('div');
-            unitDiv.className = 'unit-container';
-            
-            const title = document.createElement('h2');
-            title.className = 'unit-title';
-            title.textContent = `Unit ${unit}`;
-            unitDiv.appendChild(title);
-            
-            const gridDiv = document.createElement('div');
-            gridDiv.className = 'grid';
-            
-            const letters = ['A', 'B', 'C', 'D'];
-            
-            letters.forEach(letter => {
-                const link = document.createElement('a');
-                link.className = 'btn';
-                link.href = `${unit}${letter}index.html`; 
-                link.textContent = `Lesson ${unit}${letter}`;
-                gridDiv.appendChild(link);
-            });
-            
-            const reviewLink = document.createElement('a');
-            reviewLink.className = 'btn';
-            reviewLink.href = `${unit} reviewindex.html`; 
-            reviewLink.textContent = `Unit ${unit} Review`;
-            gridDiv.appendChild(reviewLink);
-            
-            unitDiv.appendChild(gridDiv);
-            dashboard.appendChild(unitDiv);
-        }
-
-        // 2. SAVE & RESTORE LOCAL PROGRESS
-        document.addEventListener('DOMContentLoaded', () => {
-            const savedName = localStorage.getItem('student_name');
-            if (savedName) {
-                document.getElementById('studentName').value = savedName;
-            }
-
-            document.querySelectorAll('input, select, textarea').forEach(input => {
-                const savedVal = localStorage.getItem('field_' + input.id);
-                if (savedVal && input.id !== 'studentName') {
-                    input.value = savedVal;
-                }
-
-                input.addEventListener('input', () => {
-                    if (input.id === 'studentName') {
-                        localStorage.setItem('student_name', input.value);
-                    } else if (input.id) {
-                        localStorage.setItem('field_' + input.id, input.value);
-                    }
-                });
-            });
-        });
-
-        // 3. COLLECT EXERCISES AND TRANSMIT MISTAKE REPORT
-        async function submitResultsToTeacher() {
-            const studentNameInput = document.getElementById('studentName');
-            const studentName = studentNameInput.value.trim();
-            const statusMsg = document.getElementById('statusMessage');
-            const sendBtn = document.getElementById('sendBtn');
-
-            if (!studentName) {
-                alert("Please enter your name before submitting your results!");
-                studentNameInput.focus();
-                return;
-            }
-
-            sendBtn.disabled = true;
-            statusMsg.textContent = "Transmitting results to teacher...";
-            statusMsg.style.color = "#0969da";
-
-            // Scan exercise inputs on the current document
-            const exercises = Array.from(document.querySelectorAll('input[data-correct], select[data-correct], textarea[data-correct]'));
-            
-            let totalScore = 0;
-            const maxScore = exercises.length;
-            const mistakesList = [];
-
-            exercises.forEach(el => {
-                const userVal = el.value.trim();
-                const correctVal = el.getAttribute('data-correct').trim();
-                const exerciseGroup = el.getAttribute('data-exercise') || el.name || el.id || "General Question";
-
-                if (userVal.toLowerCase() === correctVal.toLowerCase()) {
-                    totalScore++;
-                } else {
-                    mistakesList.push({
-                        exercise: exerciseGroup,
-                        studentInput: userVal || "(Blank)",
-                        correctAnswer: correctVal
-                    });
-                }
-            });
-
-            // Construct payload matching the Apps Script model
-            const payload = {
+    try {
+        await fetch(GOOGLE_SCRIPT_URL, {
+            method: "POST",
+            mode: "no-cors",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
                 studentName: studentName,
                 course: "Speakout-B2",
-                unit: 1,
-                lesson: "Navigator Overview",
-                score: totalScore,
-                maxScore: maxScore,
-                mistakes: mistakesList
-            };
+                lesson: "1A My ID",
+                reportDetails: reportText
+            })
+        });
 
-            try {
-                await fetch(GOOGLE_SCRIPT_URL, {
-                    method: "POST",
-                    mode: "no-cors",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(payload)
-                });
-
-                statusMsg.textContent = "✅ Report submitted successfully! Your teacher can now review your work.";
-                statusMsg.style.color = "#1a7f37";
-            } catch (err) {
-                statusMsg.textContent = "❌ Submission failed. Please check your network connection and try again.";
-                statusMsg.style.color = "#cf222e";
-                sendBtn.disabled = false;
-            }
-        }
-    </script>
-</body>
-</html>
+        status.textContent = "✅ Successfully sent to Google Sheet!";
+        status.style.color = "#1a7f37";
+        btn.textContent = "Sent!";
+    } catch (err) {
+        status.textContent = "❌ Failed to send. Please check your connection.";
+        status.style.color = "#cf222e";
+        btn.disabled = false;
+    }
+}
+</script>
