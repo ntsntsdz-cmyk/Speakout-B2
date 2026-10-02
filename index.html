@@ -40,7 +40,6 @@ body { font-family: Inter, system-ui, sans-serif; }
 </style>
 </head>
 <body class="h-full bg-slate-50 text-slate-800 antialiased flex flex-col selection:bg-sky-100 selection:text-sky-900">
-<!-- Top Header -->
 <header class="bg-white/90 backdrop-blur-md border-b border-slate-200 sticky top-0 z-30">
   <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
     <div class="flex items-center gap-2.5 min-w-0">
@@ -60,7 +59,6 @@ body { font-family: Inter, system-ui, sans-serif; }
           class="bg-transparent border-none text-slate-800 placeholder-slate-400 focus:outline-none w-20 sm:w-36 text-sm font-medium"
           oninput="saveStudentName(this.value)">
       </div>
-      <!-- Course progress -->
       <div class="hidden sm:flex flex-col justify-center min-w-[7.5rem] max-w-[9.5rem]" title="Progress on published lessons">
         <div class="flex items-center justify-between gap-2 mb-0.5">
           <span class="text-[10px] font-semibold text-slate-500 uppercase tracking-wide">Progress</span>
@@ -77,7 +75,6 @@ body { font-family: Inter, system-ui, sans-serif; }
     </div>
   </div>
 </header>
-<!-- Mobile progress -->
 <div class="sm:hidden bg-white border-b border-slate-200 px-4 py-2 flex items-center gap-3">
   <span class="text-[10px] font-semibold text-slate-500 uppercase">Progress</span>
   <div class="flex-1 h-1.5 bg-slate-200 rounded-full overflow-hidden">
@@ -87,7 +84,6 @@ body { font-family: Inter, system-ui, sans-serif; }
 </div>
 <main class="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
   <div class="space-y-6">
-    <!-- Welcome Banner -->
     <div class="bg-gradient-to-r from-sky-50 via-blue-50/50 to-slate-50 border border-sky-100/80 p-6 sm:p-8 rounded-2xl relative overflow-hidden shadow-sm">
       <div class="max-w-2xl relative z-10">
         <span class="inline-block px-3 py-1 bg-sky-100/80 text-sky-900 text-xs font-semibold rounded-full mb-3 border border-sky-200/60">Pearson Speakout</span>
@@ -101,21 +97,18 @@ body { font-family: Inter, system-ui, sans-serif; }
         </div>
       </div>
     </div>
-    <!-- Search / filter -->
     <div class="max-w-3xl mx-auto flex flex-col sm:flex-row gap-2 sm:items-center">
       <input type="search" id="q" placeholder="Search units or lessons…"
         class="flex-1 px-3.5 py-2.5 text-sm bg-white border border-slate-200 rounded-xl shadow-sm focus:ring-2 focus:ring-sky-500/25 focus:border-sky-500 outline-none">
       <div class="flex gap-1.5"></div>
     </div>
     <p id="status" class="max-w-3xl mx-auto text-xs text-slate-500 -mt-3">Loading lessons…</p>
-    <!-- Accordion -->
     <div class="max-w-3xl mx-auto space-y-3" id="unitsAccordionContainer"></div>
     <p class="max-w-3xl mx-auto text-center text-xs text-slate-400 pt-2 pb-6">
       Your progress is saved on this device and updates as you work through each lesson.
     </p>
   </div>
 </main>
-<!-- Results info modal -->
 <div id="reportModal" class="fixed inset-0 bg-slate-900/30 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4" onclick="if(event.target===this)closeReportModal()">
   <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl border border-slate-100 space-y-4">
     <div class="flex items-center justify-between border-b border-slate-100 pb-3">
@@ -144,8 +137,10 @@ const LESSON_TITLES = {
   '1A': 'My ID',
   '1B': 'Memory',
   '1C': "I'd much rather…",
+  '1D': 'Personality',
   '1R': 'Unit 1 Review'
 };
+const LOCAL_FALLBACK = ['1A.html', '1B.html', '1C.html', '1D.html', '1R.html'];
 let expandedUnitId = 1;
 let filter = 'all';
 let query = '';
@@ -230,10 +225,10 @@ function buildCourse(discovered) {
     const lessons = [];
     LETTERS.forEach(letter => {
       const code = u + letter;
-      lessons.push(map[code] || { unit: u, slot: letter, code, title: 'Lesson ' + letter, file: null });
+      lessons.push(map[code] || { unit: u, slot: letter, code, title: LESSON_TITLES[code] || ('Lesson ' + letter), file: null });
     });
     const rCode = u + 'R';
-    lessons.push(map[rCode] || { unit: u, slot: 'R', code: rCode, title: 'Unit Review', file: null });
+    lessons.push(map[rCode] || { unit: u, slot: 'R', code: rCode, title: LESSON_TITLES[rCode] || 'Unit Review', file: null });
     course.push({ unit: u, title: UNIT_TITLES[u] || ('Unit ' + u), lessons });
   }
   return course;
@@ -268,11 +263,9 @@ function readProgressMap() {
   try { return JSON.parse(localStorage.getItem(PROGRESS_KEY) || '{}') || {}; }
   catch (_) { return {}; }
 }
-/** Overall course % = average of saved lesson percentages (only lessons student touched),
-    weighted across all 60 slots so empty lessons count as 0 */
 function updateHeaderProgress() {
   const map = readProgressMap();
-  const TOTAL_SLOTS = 12 * 5; // A–D + R
+  const TOTAL_SLOTS = 12 * 5;
   let sum = 0;
   Object.keys(map).forEach(code => {
     const p = Number(map[code] && map[code].pct);
@@ -294,7 +287,6 @@ function renderAccordion() {
   const q = query.trim().toLowerCase();
   const pmap = readProgressMap();
   COURSE.forEach(unit => {
-    // Full structure: always show A, B, C, D, Review
     const lessons = unit.lessons.filter(l => {
       if (!q) return true;
       return (unit.title + ' ' + l.code + ' ' + l.title + ' unit ' + unit.unit).toLowerCase().includes(q);
@@ -351,7 +343,6 @@ function renderAccordion() {
           </div>`;
         list.appendChild(a);
       } else {
-        // Full structure visible — not opened yet (no upload wording)
         const d = document.createElement('div');
         d.className = 'flex items-center justify-between p-3 bg-white/80 border border-slate-100 rounded-lg';
         d.innerHTML = `
@@ -375,13 +366,14 @@ async function init() {
   const saved = localStorage.getItem('speakoutB2_student') || localStorage.getItem('empowerC1_student');
   if (saved) document.getElementById('studentNameInput').value = saved;
   const status = document.getElementById('status');
-  const LOCAL_FALLBACK = ['1A.html', '1B.html', '1C.html', '1R.html'];
   const repo = detectRepo();
   try {
     if (!repo) throw new Error('local');
     status.textContent = 'Reading ' + repo.owner + '/' + repo.repo + '…';
     const { files, branch } = await listHtmlFiles(repo.owner, repo.repo, repo.branch);
-    const discovered = files.map(parseLessonFile).filter(Boolean);
+    // Merge API + known lessons so 1D stays clickable even if API is briefly stale
+    const merged = Array.from(new Set([...(files || []), ...LOCAL_FALLBACK]));
+    const discovered = merged.map(parseLessonFile).filter(Boolean);
     COURSE = buildCourse(discovered);
     status.textContent = '';
     status.className = 'hidden';
