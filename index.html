@@ -132,19 +132,46 @@ body { font-family: Inter, system-ui, sans-serif; }
 </div>
 <script>
 const LETTERS = ['A','B','C','D'];
-const UNIT_TITLES = { 1: 'Identity' };
+
+/** Unit display titles — add as you publish units */
+const UNIT_TITLES = {
+  1: 'Identity',
+  2: 'Real or virtual?'
+};
+
+/** Optional pretty titles per lesson code */
 const LESSON_TITLES = {
   '1A': 'My ID',
   '1B': 'Memory',
   '1C': "I'd much rather…",
   '1D': 'Personality',
-  '1R': 'Unit 1 Review'
+  '1R': 'Unit 1 Review',
+  '2A': 'Real or virtual?',
+  '2B': 'Closer to nature',
+  '2C': 'Amazing lives',
+  '2D': 'Lesson D',
+  '2R': 'Unit 2 Review'
 };
-const LOCAL_FALLBACK = ['1A.html', '1B.html', '1C.html', '1D.html', '1R.html'];
+
+/**
+ * Known published lesson files.
+ * When you upload a new lesson (e.g. 3A.html), add it here so it is
+ * clickable even if GitHub API / HEAD probing is unavailable.
+ * Format: short stem only — "3A.html", "3R.html", etc.
+ */
+const LOCAL_FALLBACK = [
+  '1A.html', '1B.html', '1C.html', '1D.html', '1R.html',
+  '2A.html', '2B.html', '2C.html', '2D.html', '2R.html'
+];
+
+/** Optional: GitHub owner/repo for live discovery (works on Vercel too) */
+const GITHUB_REPO = { owner: 'ntsntsdz-cmyk', repo: 'speakout-b2', branch: 'main' };
+
 let expandedUnitId = 1;
 let filter = 'all';
 let query = '';
 let COURSE = [];
+
 function parseLessonFile(name) {
   if (!name || !/\.html$/i.test(name) || /^index\.html$/i.test(name)) return null;
   let m = name.match(/^Unit_?(\d{1,2})_?Review(?:[_.].*)?\.html$/i);
@@ -165,6 +192,7 @@ function parseLessonFile(name) {
   }
   return null;
 }
+
 function titleFromName(filename, code) {
   const bare = filename.replace(/\.html$/i, '');
   if (code && LESSON_TITLES[code] && new RegExp('^' + code + '$', 'i').test(bare)) return LESSON_TITLES[code];
@@ -179,6 +207,7 @@ function titleFromName(filename, code) {
   }
   return t.replace(/\b\w/g, c => c.toUpperCase());
 }
+
 function detectRepo() {
   const params = new URLSearchParams(location.search);
   if (params.get('repo')) {
@@ -193,8 +222,13 @@ function detectRepo() {
     if (parts.length >= 1) return { owner, repo: parts[0], branch: 'main' };
     return { owner, repo: owner + '.github.io', branch: 'main' };
   }
+  // Vercel / other hosts: use configured repo if set
+  if (GITHUB_REPO && GITHUB_REPO.owner && GITHUB_REPO.repo) {
+    return { owner: GITHUB_REPO.owner, repo: GITHUB_REPO.repo, branch: GITHUB_REPO.branch || 'main' };
+  }
   return null;
 }
+
 async function listHtmlFiles(owner, repo, branch) {
   const tried = new Set();
   let lastErr = null;
@@ -217,6 +251,30 @@ async function listHtmlFiles(owner, repo, branch) {
   }
   throw new Error(lastErr || 'Could not list files');
 }
+
+/** Probe same-origin: which short-stem lessons actually exist on this host */
+async function probeLocalLessons() {
+  const candidates = [];
+  for (let u = 1; u <= 12; u++) {
+    LETTERS.forEach(L => candidates.push(u + L + '.html'));
+    candidates.push(u + 'R.html');
+  }
+  const found = [];
+  // Batch with limited concurrency
+  const batch = 8;
+  for (let i = 0; i < candidates.length; i += batch) {
+    const slice = candidates.slice(i, i + batch);
+    const results = await Promise.all(slice.map(async name => {
+      try {
+        const r = await fetch(name, { method: 'HEAD', cache: 'no-cache' });
+        return r.ok ? name : null;
+      } catch (_) { return null; }
+    }));
+    results.forEach(n => { if (n) found.push(n); });
+  }
+  return found;
+}
+
 function buildCourse(discovered) {
   const map = {};
   discovered.forEach(l => { map[l.code] = l; });
@@ -233,14 +291,17 @@ function buildCourse(discovered) {
   }
   return course;
 }
+
 function readyCount() {
   let n = 0;
   COURSE.forEach(u => u.lessons.forEach(l => { if (l.file) n++; }));
   return n;
 }
+
 function saveStudentName(name) {
   localStorage.setItem('speakoutB2_student', name);
 }
+
 function showToast(msg) {
   const toast = document.getElementById('toast');
   document.getElementById('toastMsg').textContent = msg;
@@ -248,6 +309,7 @@ function showToast(msg) {
   clearTimeout(showToast._t);
   showToast._t = setTimeout(() => toast.classList.add('translate-y-20', 'opacity-0'), 2500);
 }
+
 function openProgressReport() {
   const name = (document.getElementById('studentNameInput').value || '').trim();
   document.getElementById('reportNameLine').textContent = name
@@ -255,14 +317,17 @@ function openProgressReport() {
     : 'Tip: type your name in the header so it carries into each lesson.';
   document.getElementById('reportModal').classList.remove('hidden');
 }
+
 function closeReportModal() {
   document.getElementById('reportModal').classList.add('hidden');
 }
+
 const PROGRESS_KEY = 'empowerC1_lessonProgress';
 function readProgressMap() {
   try { return JSON.parse(localStorage.getItem(PROGRESS_KEY) || '{}') || {}; }
   catch (_) { return {}; }
 }
+
 function updateHeaderProgress() {
   const map = readProgressMap();
   const TOTAL_SLOTS = 12 * 5;
@@ -281,6 +346,7 @@ function updateHeaderProgress() {
   if (mb) mb.style.width = pct + '%';
   if (mt) mt.textContent = pct + '%';
 }
+
 function renderAccordion() {
   const container = document.getElementById('unitsAccordionContainer');
   container.innerHTML = '';
@@ -350,7 +416,7 @@ function renderAccordion() {
             <span class="text-xs font-semibold px-2 py-0.5 rounded bg-slate-100 text-slate-500 shrink-0">${lesson.code}</span>
             <span class="text-xs sm:text-sm font-medium text-slate-400 truncate">${lesson.title}</span>
           </div>
-          <span class="text-[11px] font-bold tabular-nums text-slate-300">0%</span>`;
+          <span class="text-[11px] font-bold tabular-nums text-slate-300">—</span>`;
         list.appendChild(d);
       }
     });
@@ -362,46 +428,58 @@ function renderAccordion() {
   });
   updateHeaderProgress();
 }
+
 async function init() {
   const saved = localStorage.getItem('speakoutB2_student') || localStorage.getItem('empowerC1_student');
   if (saved) document.getElementById('studentNameInput').value = saved;
   const status = document.getElementById('status');
   const repo = detectRepo();
+  let discoveredNames = [...LOCAL_FALLBACK];
+
   try {
-    if (!repo) throw new Error('local');
-    status.textContent = 'Reading ' + repo.owner + '/' + repo.repo + '…';
-    const { files, branch } = await listHtmlFiles(repo.owner, repo.repo, repo.branch);
-    // Merge API + known lessons so 1D stays clickable even if API is briefly stale
-    const merged = Array.from(new Set([...(files || []), ...LOCAL_FALLBACK]));
-    const discovered = merged.map(parseLessonFile).filter(Boolean);
+    // 1) GitHub API (works from Vercel when GITHUB_REPO is set)
+    if (repo) {
+      status.textContent = 'Reading ' + repo.owner + '/' + repo.repo + '…';
+      try {
+        const { files } = await listHtmlFiles(repo.owner, repo.repo, repo.branch);
+        discoveredNames = Array.from(new Set([...(files || []), ...LOCAL_FALLBACK]));
+      } catch (apiErr) {
+        console.warn('GitHub list failed:', apiErr.message);
+      }
+    }
+
+    // 2) Same-origin HEAD probe — finds any uploaded *.html even if not in LOCAL_FALLBACK
+    status.textContent = 'Checking published lessons…';
+    try {
+      const probed = await probeLocalLessons();
+      if (probed.length) {
+        discoveredNames = Array.from(new Set([...discoveredNames, ...probed]));
+      }
+    } catch (probeErr) {
+      console.warn('Probe failed:', probeErr.message);
+    }
+
+    const discovered = discoveredNames.map(parseLessonFile).filter(Boolean);
     COURSE = buildCourse(discovered);
-    status.textContent = '';
-    status.className = 'hidden';
+    const n = readyCount();
+    status.textContent = n ? (n + ' lesson' + (n === 1 ? '' : 's') + ' ready') : '';
+    if (n) setTimeout(() => { status.className = 'hidden'; }, 1200);
   } catch (e) {
     COURSE = buildCourse(LOCAL_FALLBACK.map(parseLessonFile).filter(Boolean));
     status.textContent = '';
     status.className = 'hidden';
   }
+
   const firstReady = COURSE.find(u => u.lessons.some(l => l.file));
   if (firstReady) expandedUnitId = firstReady.unit;
   renderAccordion();
 }
+
 document.getElementById('q').addEventListener('input', e => {
   query = e.target.value;
   renderAccordion();
 });
-document.querySelectorAll('.chip').forEach(chip => {
-  chip.addEventListener('click', () => {
-    document.querySelectorAll('.chip').forEach(c => {
-      c.classList.remove('on', 'bg-slate-800', 'text-white', 'border-slate-800');
-      c.classList.add('bg-white', 'text-slate-600', 'border-slate-200');
-    });
-    chip.classList.add('on', 'bg-slate-800', 'text-white', 'border-slate-800');
-    chip.classList.remove('bg-white', 'text-slate-600', 'border-slate-200');
-    filter = chip.dataset.filter;
-    renderAccordion();
-  });
-});
+
 init();
 </script>
 </body>
